@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Apply for your bus trip between Ghana cities. Book your journey with Transit Safe Ghana.">
+    <title>Apply for Trip | Transit Safe Ghana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🚌</span>
+                    <span class="logo-text">Transit Safe Ghana</span>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="apply.html" class="nav-link active">Apply for Trip</a>
+                    <a href="schedules.html" class="nav-link">Schedules</a>
+                    <a href="passengers.html" class="nav-link">Passengers</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="page-header">
+            <div class="container">
+                <h1>Apply for Your Trip</h1>
+                <p>Fill out the form below to apply for your bus journey</p>
+            </div>
+        </section>
+
+        <section class="apply-section">
+            <div class="container">
+                <div class="apply-content">
+                    <!-- Trip Application Form -->
+                    <form id="trip-form" class="trip-form">
+                        <div class="form-group">
+                            <label for="passenger-name">Full Name *</label>
+                            <input type="text" id="passenger-name" name="name" required placeholder="Enter your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Phone Number *</label>
+                            <input type="tel" id="phone" name="phone" required placeholder="+233 XX XXX XXXX">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" placeholder="your.email@example.com">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="origin">Origin City *</label>
+                                <select id="origin" name="origin" required>
+                                    <option value="">Select origin</option>
+                                    <option value="Accra">Accra</option>
+                                    <option value="Kumasi">Kumasi</option>
+                                    <option value="Sunyani">Sunyani</option>
+                                    <option value="Tamale">Tamale</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="destination">Destination City *</label>
+                                <select id="destination" name="destination" required>
+                                    <option value="">Select destination</option>
+                                    <option value="Accra">Accra</option>
+                                    <option value="Kumasi">Kumasi</option>
+                                    <option value="Sunyani">Sunyani</option>
+                                    <option value="Tamale">Tamale</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="travel-date">Travel Date *</label>
+                            <input type="date" id="travel-date" name="date" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="preferred-time">Preferred Departure Time</label>
+                            <select id="preferred-time" name="time">
+                                <option value="">Any time</option>
+                                <option value="morning">Morning (6:00 AM - 12:00 PM)</option>
+                                <option value="afternoon">Afternoon (12:00 PM - 6:00 PM)</option>
+                                <option value="evening">Evening (6:00 PM - 10:00 PM)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" name="alerts" checked>
+                                Subscribe to SMS alerts for delays and incidents
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notes">Additional Notes</label>
+                            <textarea id="notes" name="notes" rows="4" placeholder="Any special requirements or notes..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-large">Submit Application</button>
+                    </form>
+
+                    <!-- Route Map Display -->
+                    <div id="route-map-section" class="route-map-section">
+                        <h3>Route Preview</h3>
+                        <div id="map-container" class="map-container">
+                            <p class="map-placeholder">Select origin and destination to see route on map</p>
+                            <div id="map" class="map-display"></div>
+                        </div>
+                        <div id="route-info" class="route-info"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; <span id="current-year"></span> Transit Safe Ghana. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/apply.js"></script>
+</body>
+</html>

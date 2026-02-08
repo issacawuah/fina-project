@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="View all passenger applications and statistics for Transit Safe Ghana.">
+    <title>Passengers | Transit Safe Ghana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🚌</span>
+                    <span class="logo-text">Transit Safe Ghana</span>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="apply.html" class="nav-link">Apply for Trip</a>
+                    <a href="schedules.html" class="nav-link">Schedules</a>
+                    <a href="passengers.html" class="nav-link active">Passengers</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="page-header">
+            <div class="container">
+                <h1>Passenger Information</h1>
+                <p>All applications from the Apply for Trip form are saved here. Use the same browser and open the site the same way (e.g. localhost) so data appears.</p>
+            </div>
+        </section>
+
+        <section class="passengers-section">
+            <div class="container">
+                <!-- Statistics Cards -->
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="total-passengers">0</div>
+                            <div class="stat-label">Total Passengers</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🗺️</div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="total-routes">0</div>
+                            <div class="stat-label">Active Routes</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📱</div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="alerts-subscribed">0</div>
+                            <div class="stat-label">SMS Alerts</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="today-applications">0</div>
+                            <div class="stat-label">Today's Applications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Route Statistics -->
+                <div class="route-stats-section">
+                    <h2>Passengers by Route</h2>
+                    <div id="route-stats" class="route-stats-grid"></div>
+                </div>
+
+                <!-- Filter and Search -->
+                <div class="passengers-controls">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Search by name, phone, or route..." class="search-input">
+                    </div>
+                    <div class="filter-box">
+                        <select id="filter-status" class="filter-select">
+                            <option value="">All Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        <select id="filter-route" class="filter-select">
+                            <option value="">All Routes</option>
+                        </select>
+                        <button id="clear-filters" class="btn btn-secondary">Clear Filters</button>
+                    </div>
+                </div>
+
+                <!-- Passengers Table -->
+                <div class="passengers-table-container">
+                    <table class="passengers-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Route</th>
+                                <th>Travel Date</th>
+                                <th>Time</th>
+                                <th>Alerts</th>
+                                <th>Status</th>
+                                <th>Applied</th>
+                            </tr>
+                        </thead>
+                        <tbody id="passengers-tbody">
+                            <tr>
+                                <td colspan="10" class="no-data">Loading passenger data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Export Button -->
+                <div class="export-section">
+                    <button id="export-btn" class="btn btn-primary">Export to JSON</button>
+                    <button id="clear-all-btn" class="btn btn-secondary" style="background: #E65100; color: white;">Clear All Data</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; <span id="current-year"></span> Transit Safe Ghana. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/passengers.js"></script>
+</body>
+</html>

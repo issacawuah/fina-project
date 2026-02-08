@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="View bus schedules and fares for routes between Accra, Kumasi, Sunyani, and Tamale.">
+    <title>Schedules | Transit Safe Ghana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🚌</span>
+                    <span class="logo-text">Transit Safe Ghana</span>
+                </div>
+                <nav class="nav">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="apply.html" class="nav-link">Apply for Trip</a>
+                    <a href="schedules.html" class="nav-link active">Schedules</a>
+                    <a href="passengers.html" class="nav-link">Passengers</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="page-header">
+            <div class="container">
+                <h1>Bus Schedules & Fares</h1>
+                <p>Find schedules and prices for your route</p>
+            </div>
+        </section>
+
+        <section class="schedules-section">
+            <div class="container">
+                <div class="filter-bar">
+                    <form id="filter-form" class="filter-form">
+                        <div class="filter-group">
+                            <label for="filter-origin">From</label>
+                            <select id="filter-origin" name="origin">
+                                <option value="">All Cities</option>
+                                <option value="Accra">Accra</option>
+                                <option value="Kumasi">Kumasi</option>
+                                <option value="Sunyani">Sunyani</option>
+                                <option value="Tamale">Tamale</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-destination">To</label>
+                            <select id="filter-destination" name="destination">
+                                <option value="">All Cities</option>
+                                <option value="Accra">Accra</option>
+                                <option value="Kumasi">Kumasi</option>
+                                <option value="Sunyani">Sunyani</option>
+                                <option value="Tamale">Tamale</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Filter</button>
+                    </form>
+                </div>
+
+                <div id="schedules-container" class="schedules-container">
+                    <div class="loading-spinner" id="loading">Loading schedules...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; <span id="current-year"></span> Transit Safe Ghana. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/schedules.js"></script>
+</body>
+</html>
