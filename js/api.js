@@ -1,123 +1,365 @@
-// API Module - Handles external API calls
+/**
 
+* API Module - Central API management
+
+* This module initializes and exports API instances
+
+*/
+ 
 import { config } from './config.js';
 
+import { WeatherAPI } from './weatherAPI.js';
+
+import { CountriesAPI } from './countriesAPI.js';
+ 
 /**
- * Get the base path for assets (works on GitHub Pages with subdirectories)
- */
-function getBasePath() {
-    // Get the path from the current page URL
-    const path = window.location.pathname;
 
-    // If running locally (file:// protocol) or on root domain
-    if (window.location.protocol === 'file:' || path === '/') {
-        return '/';
-    }
+* Initialize Weather API
 
-    // For GitHub Pages or subdirectory deployments
-    // Remove the filename and get the base directory
-    const parts = path.split('/');
-    // Remove empty string and filename
-    parts.splice(parts.length - 1, 1);
+*/
 
-    // If there's a repo name (e.g., /repo-name/), keep it
-    // Otherwise return just /
-    return parts.length > 1 ? parts.join('/') + '/' : '/';
-}
-
+export const weatherAPI = new WeatherAPI(config.weatherApiKey);
+ 
 /**
- * Load schedules data from JSON file
- */
-export async function loadSchedules() {
-    try {
-        const basePath = getBasePath();
-        const response = await fetch(`${basePath}data/schedules.json`);
-        if (!response.ok) {
-            throw new Error(`Failed to load schedules: ${response.status}`);
-        }
-        const data = await response.json();
-        return data.routes || [];
-    } catch (error) {
-        console.error('Error loading schedules:', error);
-        throw error;
-    }
-}
 
+* Initialize Countries API (no key needed)
+
+*/
+
+export const countriesAPI = new CountriesAPI();
+ 
 /**
- * Get Google Maps Directions between two cities
- */
-export async function getDirections(origin, destination) {
-    const apiKey = config.googleMapsApiKey;
 
-    if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY') {
-        throw new Error('Google Maps API key not configured. Please add your API key in js/config.js');
-    }
+* City name to full address mapping
 
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${apiKey}`;
+*/
 
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.status !== 'OK') {
-            throw new Error(data.error_message || `Directions API error: ${data.status}`);
-        }
-
-        return data;
-    } catch (error) {
-        console.error('Error fetching directions:', error);
-        throw error;
-    }
-}
-
-/**
- * Send SMS alert via Twilio/BulkSMSGH
- * This calls a serverless function that handles the actual SMS sending
- */
-export async function sendSMSAlert(phone, route, message) {
-    const apiUrl = config.alertsApiUrl;
-
-    if (!apiUrl || apiUrl.includes('your-function')) {
-        // Fallback: show success message even if API not configured (for demo)
-        return {
-            success: true,
-            message: 'Alert subscription received. SMS service will be configured in production.'
-        };
-    }
-
-    try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                phone: phone,
-                route: route,
-                message: message
-            })
-        });
-
-        const data = await response.json();
-        return {
-            success: response.ok,
-            message: data.message || 'Alert sent successfully'
-        };
-    } catch (error) {
-        console.error('Error sending SMS:', error);
-        return {
-            success: false,
-            message: 'Failed to send alert. Please try again later.'
-        };
-    }
-}
-
-/**
- * City name to address mapping for Google Maps
- */
 export const cityAddresses = {
+
     'Accra': 'Accra, Ghana',
+
     'Kumasi': 'Kumasi, Ghana',
+
     'Sunyani': 'Sunyani, Ghana',
+
     'Tamale': 'Tamale, Ghana'
+
 };
+ 
+/**
+
+* Get coordinates for a city
+
+* @param {string} cityName - Name of the city
+
+* @returns {Object} Coordinates {lat, lng}
+
+*/
+
+export function getCityCoordinates(cityName) {
+
+    return config.cityCoordinates[cityName] || { lat: 7.9465, lng: -1.0232 }; // Default to center of Ghana
+
+}
+ 
+/**
+
+* Mock bus schedules data (local data, not from external API)
+
+* This represents the bus company's schedule information
+
+* In a real app, this would come from your own database/backend
+
+*/
+
+export const localBusSchedules = [
+
+    {
+
+        id: "acc-kum-001",
+
+        origin: "Accra",
+
+        destination: "Kumasi",
+
+        operator: "VIP Jeoun",
+
+        departureTime: "06:00",
+
+        arrivalTime: "10:30",
+
+        fare: 85,
+
+        currency: "GHS",
+
+        stops: ["Nsawam", "Nkawkaw"],
+
+        duration: "4h 30m",
+
+        status: "active",
+
+        busType: "AC Coach",
+
+        seatsAvailable: 15
+
+    },
+
+    {
+
+        id: "acc-kum-002",
+
+        origin: "Accra",
+
+        destination: "Kumasi",
+
+        operator: "STC",
+
+        departureTime: "08:00",
+
+        arrivalTime: "12:45",
+
+        fare: 90,
+
+        currency: "GHS",
+
+        stops: ["Nsawam", "Nkawkaw", "Mampong"],
+
+        duration: "4h 45m",
+
+        status: "active",
+
+        busType: "Luxury",
+
+        seatsAvailable: 8
+
+    },
+
+    {
+
+        id: "kum-acc-001",
+
+        origin: "Kumasi",
+
+        destination: "Accra",
+
+        operator: "VIP Jeoun",
+
+        departureTime: "05:30",
+
+        arrivalTime: "10:00",
+
+        fare: 85,
+
+        currency: "GHS",
+
+        stops: ["Nkawkaw", "Nsawam"],
+
+        duration: "4h 30m",
+
+        status: "active",
+
+        busType: "AC Coach",
+
+        seatsAvailable: 22
+
+    },
+
+    {
+
+        id: "acc-tam-001",
+
+        origin: "Accra",
+
+        destination: "Tamale",
+
+        operator: "STC",
+
+        departureTime: "06:00",
+
+        arrivalTime: "14:00",
+
+        fare: 120,
+
+        currency: "GHS",
+
+        stops: ["Kumasi", "Sunyani", "Techiman"],
+
+        duration: "8h",
+
+        status: "active",
+
+        busType: "Luxury",
+
+        seatsAvailable: 12
+
+    },
+
+    {
+
+        id: "acc-sun-001",
+
+        origin: "Accra",
+
+        destination: "Sunyani",
+
+        operator: "Metro Mass",
+
+        departureTime: "07:00",
+
+        arrivalTime: "12:00",
+
+        fare: 55,
+
+        currency: "GHS",
+
+        stops: ["Nsawam", "Nkawkaw", "Kumasi"],
+
+        duration: "5h",
+
+        status: "active",
+
+        busType: "Standard",
+
+        seatsAvailable: 30
+
+    },
+
+    {
+
+        id: "sun-kum-001",
+
+        origin: "Sunyani",
+
+        destination: "Kumasi",
+
+        operator: "Metro Mass",
+
+        departureTime: "06:30",
+
+        arrivalTime: "09:30",
+
+        fare: 35,
+
+        currency: "GHS",
+
+        stops: ["Techiman"],
+
+        duration: "3h",
+
+        status: "active",
+
+        busType: "Standard",
+
+        seatsAvailable: 25
+
+    },
+
+    {
+
+        id: "tam-kum-001",
+
+        origin: "Tamale",
+
+        destination: "Kumasi",
+
+        operator: "STC",
+
+        departureTime: "05:00",
+
+        arrivalTime: "12:30",
+
+        fare: 95,
+
+        currency: "GHS",
+
+        stops: ["Techiman", "Sunyani"],
+
+        duration: "7h 30m",
+
+        status: "active",
+
+        busType: "Luxury",
+
+        seatsAvailable: 5
+
+    },
+
+    {
+
+        id: "kum-tam-001",
+
+        origin: "Kumasi",
+
+        destination: "Tamale",
+
+        operator: "VIP Jeoun",
+
+        departureTime: "07:00",
+
+        arrivalTime: "14:30",
+
+        fare: 100,
+
+        currency: "GHS",
+
+        stops: ["Sunyani", "Techiman"],
+
+        duration: "7h 30m",
+
+        status: "active",
+
+        busType: "AC Coach",
+
+        seatsAvailable: 18
+
+    }
+
+];
+ 
+/**
+
+* Get all bus schedules
+
+* @returns {Promise<Array>} Array of bus schedules
+
+*/
+
+export async function loadSchedules() {
+
+    // Return local schedules immediately
+
+    // In production, this would fetch from your backend
+
+    return Promise.resolve(localBusSchedules);
+
+}
+ 
+/**
+
+* Send SMS alert (placeholder - would need backend implementation)
+
+* @param {string} phone - Phone number
+
+* @param {string} route - Route information
+
+* @param {string} message - Message to send
+
+* @returns {Promise<Object>} Result
+
+*/
+
+export async function sendSMSAlert(phone, route, message) {
+
+   
+    console.log('SMS Alert (Demo Mode):', { phone, route, message });
+
+    return Promise.resolve({
+
+        success: true,
+
+        message: 'Alert subscription received. SMS service will be configured in production.'
+
+    });
+
+}
+ 

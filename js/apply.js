@@ -1,15 +1,15 @@
-// Apply Page - Trip Application Form and Google Maps Integration
+/**
+ * Apply Page - Trip Application Form with Map and Weather Integration
+ */
 
-import { cityAddresses, sendSMSAlert } from './api.js';
+import { cityAddresses, sendSMSAlert, getCityCoordinates, weatherAPI } from './api.js';
 
 const STORAGE_KEY = 'transitSafeGhana_passengers';
-/** Max passengers per route + date + time slot; when full, client is prompted */
 const MAX_PASSENGERS_PER_SLOT = 5;
 
-let mapInstance = null;
-let directionsRenderer = null;
-
-/** Get existing passengers from localStorage */
+/**
+ * Get existing passengers from localStorage
+ */
 function getStoredPassengers() {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -19,7 +19,9 @@ function getStoredPassengers() {
     }
 }
 
-/** Count how many passengers are already booked for this route + date + time slot */
+/**
+ * Count passengers booked for a specific route, date, and time slot
+ */
 function getBookedCountForSlot(origin, destination, date, time) {
     const passengers = getStoredPassengers();
     return passengers.filter((p) => {
@@ -30,59 +32,19 @@ function getBookedCountForSlot(origin, destination, date, time) {
     }).length;
 }
 
-/** Return true if the selected time slot is full (client should be prompted) */
+/**
+ * Check if time slot is full
+ */
 function isTimeSlotFull(origin, destination, date, time) {
     if (!time) return false; // "Any time" is not checked for capacity
     const booked = getBookedCountForSlot(origin, destination, date, time);
     return booked >= MAX_PASSENGERS_PER_SLOT;
 }
 
-// Initialize Google Maps
-function initMap() {
-    const mapElement = document.getElementById('map');
-    if (!mapElement || !window.google) return;
-
-    mapInstance = new google.maps.Map(mapElement, {
-        center: { lat: 7.9465, lng: -1.0232 }, // Center of Ghana
-        zoom: 7
-    });
-
-    directionsRenderer = new google.maps.DirectionsRenderer();
-    directionsRenderer.setMap(mapInstance);
-}
-
-// Load Google Maps script
-async function loadGoogleMaps() {
-    if (window.google && window.google.maps) {
-        return;
-    }
-    const apiKey = await getApiKey();
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initGoogleMaps`;
-        script.async = true;
-        script.defer = true;
-        window.initGoogleMaps = () => {
-            delete window.initGoogleMaps;
-            initMap();
-            resolve();
-        };
-        script.onerror = () => reject(new Error('Failed to load Google Maps'));
-        document.head.appendChild(script);
-    });
-}
-
-async function getApiKey() {
-    // Dynamic import to get config
-    try {
-        const module = await import('./config.js');
-        return module.config.googleMapsApiKey || '';
-    } catch {
-        return '';
-    }
-}
-
-// Show route on map
+/**
+ * Show route on map using Leaflet (free, no API key needed!)
+ * Leaflet is loaded from CDN in the HTML
+ */
 async function showRoute(origin, destination) {
     const mapElement = document.getElementById('map');
     const placeholder = document.querySelector('.map-placeholder');
@@ -91,61 +53,176 @@ async function showRoute(origin, destination) {
     if (!mapElement) return;
 
     try {
-        // Load Google Maps if not loaded
-        if (!window.google || !window.google.maps) {
-            await loadGoogleMaps();
+        // Get coordinates
+        const originCoords = getCityCoordinates(origin);
+        const destCoords = getCityCoordinates(destination);
+
+        // Initialize map if not already done
+        if (!window.transitMap) {
+            // Check if Leaflet is loaded
+            if (typeof L === 'undefined') {
+                // Load Leaflet dynamically
+                await loadLeaflet();
+            }
+
+            window.transitMap = L.map('map').setView([originCoords.lat, originCoords.lng], 7);
+            
+            // Add OpenStreetMap tiles (free, no API key needed!)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(window.transitMap);
         }
 
-        const originAddr = cityAddresses[origin] || origin;
-        const destAddr = cityAddresses[destination] || destination;
+        // Clear existing markers and lines
+        if (window.transitMarkers) {
+            window.transitMarkers.forEach(marker => marker.remove());
+        }
+        if (window.transitLine) {
+            window.transitLine.remove();
+        }
 
-        const directionsService = new google.maps.DirectionsService();
+        // Add markers
+        const originMarker = L.marker([originCoords.lat, originCoords.lng])
+            .bindPopup(`<b>${origin}</b><br>Origin`)
+            .addTo(window.transitMap);
         
-        directionsService.route({
-            origin: originAddr,
-            destination: destAddr,
-            travelMode: google.maps.TravelMode.DRIVING
-        }, (result, status) => {
-            if (status === 'OK' && directionsRenderer) {
-                directionsRenderer.setDirections(result);
-                mapElement.classList.add('active');
-                if (placeholder) placeholder.style.display = 'none';
+        const destMarker = L.marker([destCoords.lat, destCoords.lng])
+            .bindPopup(`<b>${destination}</b><br>Destination`)
+            .addTo(window.transitMap);
 
-                // Display route information
-                const route = result.routes[0].legs[0];
-                if (routeInfo) {
-                    routeInfo.innerHTML = `
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <div>
-                                <strong>Distance:</strong> ${route.distance.text}
-                            </div>
-                            <div>
-                                <strong>Duration:</strong> ${route.duration.text}
-                            </div>
-                            <div>
-                                <strong>From:</strong> ${route.start_address}
-                            </div>
-                            <div>
-                                <strong>To:</strong> ${route.end_address}
-                            </div>
-                        </div>
-                    `;
-                }
-            } else {
-                if (routeInfo) {
-                    routeInfo.innerHTML = `<p style="color: #E65100;">Could not find route. Please check your selections.</p>`;
-                }
-            }
-        });
+        // Draw line between cities
+        const line = L.polyline([
+            [originCoords.lat, originCoords.lng],
+            [destCoords.lat, destCoords.lng]
+        ], { color: '#0B6623', weight: 3 }).addTo(window.transitMap);
+
+        // Store references
+        window.transitMarkers = [originMarker, destMarker];
+        window.transitLine = line;
+
+        // Fit map to show both markers
+        const bounds = L.latLngBounds([
+            [originCoords.lat, originCoords.lng],
+            [destCoords.lat, destCoords.lng]
+        ]);
+        window.transitMap.fitBounds(bounds, { padding: [50, 50] });
+
+        // Show map
+        mapElement.classList.add('active');
+        if (placeholder) placeholder.style.display = 'none';
+
+        // Calculate approximate distance
+        const distance = calculateDistance(
+            originCoords.lat, originCoords.lng,
+            destCoords.lat, destCoords.lng
+        );
+
+        // Display route information
+        if (routeInfo) {
+            routeInfo.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <strong>From:</strong> ${origin}
+                    </div>
+                    <div>
+                        <strong>To:</strong> ${destination}
+                    </div>
+                    <div>
+                        <strong>Approximate Distance:</strong> ${distance.toFixed(0)} km
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load weather for destination
+        loadDestinationWeather(destination);
+
     } catch (error) {
         console.error('Error showing route:', error);
         if (routeInfo) {
-            routeInfo.innerHTML = `<p style="color: #E65100;">${error.message}</p>`;
+            routeInfo.innerHTML = `<p style="color: #E65100;">Could not display route. ${error.message}</p>`;
         }
     }
 }
 
-// Handle form submission
+/**
+ * Load Leaflet library dynamically
+ */
+function loadLeaflet() {
+    return new Promise((resolve, reject) => {
+        // Add CSS
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+        link.crossOrigin = '';
+        document.head.appendChild(link);
+
+        // Add JS
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+        script.crossOrigin = '';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+/**
+ * Calculate distance between two coordinates (Haversine formula)
+ */
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function toRad(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
+/**
+ * Load and display weather for destination city
+ */
+async function loadDestinationWeather(city) {
+    const routeInfo = document.getElementById('route-info');
+    if (!routeInfo) return;
+
+    try {
+        const weather = await weatherAPI.getCurrentWeather(city);
+        
+        const weatherHTML = `
+            <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-light); border-radius: 8px;">
+                <h4 style="margin: 0 0 0.5rem 0; color: var(--primary-color);">Weather in ${city}</h4>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <img src="https:${weather.icon}" alt="${weather.condition}" style="width: 50px; height: 50px;">
+                    <div>
+                        <p style="margin: 0; font-size: 1.5rem; font-weight: bold;">${weather.temp_c}°C</p>
+                        <p style="margin: 0; color: var(--text-light);">${weather.condition}</p>
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-light);">Feels like ${weather.feelslike_c}°C</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        routeInfo.innerHTML += weatherHTML;
+    } catch (error) {
+        console.error('Error loading weather:', error);
+        // Don't show error, just skip weather display
+    }
+}
+
+/**
+ * Handle form submission
+ */
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('trip-form');
     const originSelect = document.getElementById('origin');
@@ -164,7 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const placeholder = document.querySelector('.map-placeholder');
                 if (mapElement) mapElement.classList.remove('active');
                 if (placeholder) placeholder.style.display = 'block';
-                document.getElementById('route-info').innerHTML = '';
+                const routeInfoEl = document.getElementById('route-info');
+                if (routeInfoEl) routeInfoEl.innerHTML = '';
             }
         };
 
@@ -197,17 +275,21 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = 'Submitting...';
 
             try {
-                // 0. If a specific time is selected, check if that slot is full
+                // Check if time slot is full
                 if (data.time) {
                     const full = isTimeSlotFull(data.origin, data.destination, data.date, data.time);
                     if (full) {
-                        const timeLabel = { morning: 'Morning (6:00 AM - 12:00 PM)', afternoon: 'Afternoon (12:00 PM - 6:00 PM)', evening: 'Evening (6:00 PM - 10:00 PM)' }[data.time] || data.time;
+                        const timeLabel = {
+                            morning: 'Morning (6:00 AM - 12:00 PM)',
+                            afternoon: 'Afternoon (12:00 PM - 6:00 PM)',
+                            evening: 'Evening (6:00 PM - 10:00 PM)'
+                        }[data.time] || data.time;
                         alert(`This time slot is full.\n\n"${timeLabel}" for ${data.origin} → ${data.destination} on ${data.date} has reached the maximum number of passengers (${MAX_PASSENGERS_PER_SLOT}).\n\nPlease choose another time or another date.`);
                         return;
                     }
                 }
 
-                // 1. Save passenger data to localStorage
+                // Save passenger data to localStorage
                 const passengerData = {
                     ...data,
                     id: Date.now().toString(),
@@ -218,14 +300,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 existingPassengers.push(passengerData);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(existingPassengers));
 
-                // 2. If alerts are enabled, send SMS (don't block save)
+                // If alerts are enabled, send SMS (non-blocking)
                 if (data.alerts && data.phone) {
                     const route = `${data.origin} to ${data.destination}`;
                     const message = `Thank you for applying! Your trip from ${route} is being processed.`;
                     sendSMSAlert(data.phone, route, message).catch(() => {});
                 }
 
-                // 3. Show success and redirect option
+                // Show success message
                 alert(`Thank you, ${data.name}! Your application has been saved.\n\nFrom: ${data.origin} → To: ${data.destination}\n\nGo to the Passengers page to see all applications.`);
                 
                 // Reset form
